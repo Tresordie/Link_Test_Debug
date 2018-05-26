@@ -1355,6 +1355,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1200
          TabIndex        =   11
+         Text            =   "1"
          Top             =   2880
          Width           =   1095
       End
@@ -1371,6 +1372,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1200
          TabIndex        =   9
+         Text            =   "None"
          Top             =   2280
          Width           =   1095
       End
@@ -1387,6 +1389,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1200
          TabIndex        =   7
+         Text            =   "8"
          Top             =   1680
          Width           =   1095
       End
@@ -1403,6 +1406,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1200
          TabIndex        =   5
+         Text            =   "115200"
          Top             =   1080
          Width           =   1095
       End
@@ -1535,18 +1539,29 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+Option Explicit
+Dim Relay(10) As Byte
+Dim CRC16(1) As Byte
 
+Public Sub Cal_CRC16(dat() As Byte, CRC() As Byte)
 
+    Dim temp As Long
+    Dim i As Integer
+    
+    For i = 0 To 8
+     temp = temp + dat(i)
+    Next i
+
+    temp = val("&H" & Hex(temp))
+    CRC(1) = temp / 256
+    CRC(0) = temp Mod 256
+End Sub
 
 Private Sub Command1_Click()
 
-If (Command1.Caption = "OPEN") Then
-  MSComm1.CommPort = Val(Combo1.Text)
-  If MSComm1.PortOpen Then
-  MSComm1.PortOpen = False
-   MsgBox "COM port had been opened!", vbOKOnly + vbCritical + vbDefaultButton1, "Error"
-  End If
-  With MSComm1
+If (Command1.Caption = "OPEN") Then                                 '可以打开
+ MSComm1.CommPort = val(Mid(Combo1.Text, 4, 1))
+ With MSComm1
     .Settings = Combo2.Text & "," & Mid(Combo4.Text, 1, 1) & "," & Combo3.Text & "," & Combo5.Text  '这里用"+"和用"&"的作用是一样的，都可以用来连接
     .InputLen = 0
     .InBufferSize = 1
@@ -1554,25 +1569,21 @@ If (Command1.Caption = "OPEN") Then
     .InputMode = comInputModeBinary
     .InBufferCount = 0
     End With
- '***************************************************************************
- 
- '       串口的初始化各参数设置
- 
- '**************************************************************************
-  MSComm1.PortOpen = True
-  Command1.Caption = "CLOSE"
-  Command1.BackColor = &HFF&
-Else
+ MSComm1.PortOpen = True
+ Command1.Caption = "CLOSE"
+ Command1.BackColor = &HFF00&
+
+ElseIf (Command1.Caption = "CLOSE") Then                            '可以关闭
   MSComm1.PortOpen = False
   Command1.Caption = "OPEN"
-  Command1.BackColor = &H0&
+  Command1.BackColor = &HFF&
 End If
 
 End Sub
 
 Private Sub Command3_Click()
 If (Command3.Caption = "OPEN") Then
-  MSComm2.CommPort = Val(Combo6.Text)
+  MSComm2.CommPort = val(Combo6.Text)
   If MSComm2.PortOpen Then
   MSComm2.PortOpen = False
    MsgBox "COM port had been opened!", vbOKOnly + vbCritical + vbDefaultButton1, "Error"
@@ -1611,21 +1622,15 @@ Label4.Caption = "DataBits"
 Label5.Caption = "Parity"
 Label6.Caption = "StopBit"
 
-Combo2.AddItem "9600"
+Call RecognizeCOM
+
 Combo2.AddItem "115200"
 Combo2.AddItem "921600"
-
 Combo3.AddItem ("8")
-
-For i = 1 To 16
-Combo1.AddItem CStr(i)
-Next i
-
 Combo4.AddItem "None"
 Combo4.AddItem "Odd"
 Combo4.AddItem "Even"
 Combo5.AddItem "1"
-Combo5.AddItem "2"
 
 Command1.Caption = "OPEN"
 Command1.BackColor = &HFF&
@@ -1693,10 +1698,6 @@ For i = 0 To 11
  Shape9(i).FillStyle = 0
 Next i
 
-
-
-
-
 End Sub
 
 Sub InitRs232() '初始化串口副程序
@@ -1714,9 +1715,39 @@ Sub InitRs232() '初始化串口副程序
    MSComm1.PortOpen = True
 End Sub
 
-
-
-
+Sub RecognizeCOM() '自动识别COM Port
+    Dim i As Integer
+    Dim j As Integer
+    j = 0
+    For i = 1 To 32 Step 1
+    If MSComm1.PortOpen = True Then                 '先关闭串口
+    MSComm1.PortOpen = False
+    End If
+    MSComm1.CommPort = i
+    On Error Resume Next                            '说明当一个运行时错误发生时，控件转到紧接着发生错误的语句之后的语句，并在此继续运行。访问对象时要使用这种形式而不使用 On Error GoTo。
+    MSComm1.PortOpen = True
+    If Err.Number <> 8002 Then                      '无效的串口号。这样可以检测到虚拟串口，如果用Err.Number = 0的话检测不到虚拟串口
+    If j = 0 Then
+    j = i
+    End If
+    Combo1.AddItem "COM" & i                         '生成串口选择列表
+    End If
+    MSComm1.PortOpen = False
+    Next i
+    If j >= 1 Then
+    Combo1.Text = "COM" & j                        '自动打开可用的最小串口号
+    MSComm1.CommPort = j
+    'MSComm1.PortOpen = True
+    'Command1.Caption = "CLOSE"
+    'Command1.BackColor = &HFF00&                   'Green
+    If Err.Number = 8005 Then                       '串口已打开,vbExclamation '
+    MSComm1.PortOpen = False
+    Combo1.Text = ""
+    Command1.Caption = "OPEN"
+    Command1.BackColor = &HFF&                      'Red
+    End If
+    End If
+End Sub
 
 Private Sub MSComm1_OnComm()
 
@@ -1744,19 +1775,21 @@ Private Sub MSComm1_OnComm()
 End Sub
 
 Private Sub realy1_Click(Index As Integer)
-    
- Dim Relay(10) As Byte
+     
  Relay(0) = &H55
  Relay(1) = &HB
  Relay(2) = &H1
  Relay(3) = &H0
  Relay(4) = &H0
  Relay(5) = &H0
- Relay(6) = &H0
- Relay(7) = &H0
+ Relay(6) = &H1
+ Relay(7) = &H1
  Relay(8) = &HAA
- Relay(9) = &H1
- Relay(10) = &HB
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
 
  MSComm1.Output = Relay
  
