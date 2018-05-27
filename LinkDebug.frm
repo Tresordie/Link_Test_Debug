@@ -33,8 +33,18 @@ Begin VB.Form Form1
       Top             =   5160
       Width           =   5295
       Begin VB.TextBox Text1 
+         BeginProperty Font 
+            Name            =   "Calibri"
+            Size            =   14.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
          Height          =   3255
          Left            =   120
+         MultiLine       =   -1  'True
          ScrollBars      =   2  'Vertical
          TabIndex        =   103
          Top             =   360
@@ -58,7 +68,7 @@ Begin VB.Form Form1
          Width           =   1815
       End
       Begin VB.CommandButton Command5 
-         Caption         =   "1.SET RANGE"
+         Caption         =   "1.SET RANGE FOR ALL CHs"
          Height          =   1215
          Left            =   120
          TabIndex        =   100
@@ -127,7 +137,7 @@ Begin VB.Form Form1
       Top             =   960
       Width           =   3135
       Begin VB.CommandButton Command4 
-         Caption         =   "SEND"
+         Caption         =   "CLEAR"
          Height          =   495
          Left            =   1560
          Style           =   1  'Graphical
@@ -1556,16 +1566,16 @@ Dim ACK_USB_Board() As Byte
 Dim Sensor_Status(11) As Byte
 Dim CRC16(1) As Byte
 
-Dim RX_Counter As Integer
-Dim RX_Bytes(16) As Integer
-Dim RX_DataIndex As Integer
+Dim SetVoltageRange(12) As Byte
+Dim GetAllChannelVoltage(12) As Byte
+Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 
-Public Sub Cal_CRC16(dat() As Byte, crc() As Byte)
+Public Sub Cal_CRC16(dat() As Byte, crc() As Byte, length As Integer)
 
 Dim temp As Long
 Dim i As Integer
 
-For i = 0 To 8
+For i = 0 To length - 1
  temp = temp + dat(i)
 Next i
 
@@ -1590,7 +1600,7 @@ If ((src_pack(0) <> &H55) Or (src_pack(1) <> &HB) Or (src_pack(2) <> &H1)) Then
 End If
 
 If ((src_pack(0) = &H55) And (src_pack(1) = &HB) And (src_pack(2) = &H1) And (src_pack(8) = &HAA)) Then
- Call Cal_CRC16(temp, crc)
+ Call Cal_CRC16(temp, crc, 9)
  If ((crc(1) = src_pack(9)) And (crc(0) = src_pack(10))) Then
     valid_data = True
     For i = 3 To 7
@@ -1626,45 +1636,109 @@ End If
 End Sub
 
 Private Sub Command3_Click()
-If (Command3.Caption = "OPEN") Then
-  MSComm2.CommPort = Val(Combo6.Text)
-  If MSComm2.PortOpen Then
-  MSComm2.PortOpen = False
-   MsgBox "COM port had been opened!", vbOKOnly + vbCritical + vbDefaultButton1, "Error"
-  End If
-  With MSComm2
+If (Command3.Caption = "OPEN") Then                                 '可以打开
+ MSComm2.CommPort = Val(Mid(Combo6.Text, 4, 1))
+ With MSComm2
     .Settings = Combo7.Text & "," & Mid(Combo9.Text, 1, 1) & "," & Combo8.Text & "," & Combo10.Text  '这里用"+"和用"&"的作用是一样的，都可以用来连接
     .InputLen = 0
     .InBufferSize = 1
     .RThreshold = 1
-    .InputMode = comInputModeBinary
+    .InputMode = comInputModeText
     .InBufferCount = 0
     End With
- '***************************************************************************
- 
- '       串口的初始化各参数设置
- 
- '**************************************************************************
-  MSComm2.PortOpen = True
-  Command3.Caption = "CLOSE"
-  Command3.BackColor = &HFF&
-Else
+ MSComm2.PortOpen = True
+ Command3.Caption = "CLOSE"
+ Command3.BackColor = &HFF00&
+
+ElseIf (Command3.Caption = "CLOSE") Then                            '可以关闭
   MSComm2.PortOpen = False
   Command3.Caption = "OPEN"
-  Command3.BackColor = &H0&
+  Command3.BackColor = &HFF&
 End If
+End Sub
+
+Private Sub Command4_Click()
+ Text1.Text = ""
+End Sub
+
+Private Sub Command5_Click()
+    Dim crc(1) As Byte
+
+    Command6.Enabled = True
+    If ((Check1(0).Value = 1) And ((Check1(1).Value = 1))) Then
+        MsgBox "无法实现同时选择两种量程！", vbOKOnly + vbInformation, "提示信息!" '为用户提示出错信息
+    ElseIf ((Check1(0).Value = 0) And ((Check1(1).Value = 0))) Then
+        MsgBox "请至少选择一种量程！", vbOKOnly + vbInformation, "提示信息!" '为用户提示出错信息
+    ElseIf (Check1(0).Value = 1) Then
+        SetVoltageRange(0) = &H55
+        SetVoltageRange(1) = &HD
+        SetVoltageRange(2) = &HA
+        SetVoltageRange(3) = &H0
+        SetVoltageRange(4) = &H0
+        SetVoltageRange(5) = &H0
+        SetVoltageRange(6) = &H0
+        SetVoltageRange(7) = &H0
+        SetVoltageRange(8) = &H0
+        SetVoltageRange(9) = &H0
+        SetVoltageRange(10) = &H0
+        Call Cal_CRC16(SetVoltageRange, crc, 12)
+        SetVoltageRange(11) = crc(1)
+        SetVoltageRange(12) = crc(0)
+    ElseIf (Check1(1).Value = 1) Then
+        SetVoltageRange(0) = &H55
+        SetVoltageRange(1) = &HD
+        SetVoltageRange(2) = &HA
+        SetVoltageRange(3) = &HFF
+        SetVoltageRange(4) = &HFF
+        SetVoltageRange(5) = &HFF
+        SetVoltageRange(6) = &HFF
+        SetVoltageRange(7) = &HFF
+        SetVoltageRange(8) = &HFF
+        SetVoltageRange(9) = &HFF
+        SetVoltageRange(10) = &HFF
+        Call Cal_CRC16(SetVoltageRange, crc, 12)
+        SetVoltageRange(11) = crc(1)
+        SetVoltageRange(12) = crc(0)
+    End If
+    MSComm2.Output = SetVoltageRange
+End Sub
+
+Private Sub Command6_Click()
+    Dim crc(1) As Byte
+    GetAllChannelVoltage(0) = &H55
+    GetAllChannelVoltage(1) = &HD
+    GetAllChannelVoltage(2) = &HB
+    GetAllChannelVoltage(3) = &HFF
+    GetAllChannelVoltage(4) = &HFF
+    GetAllChannelVoltage(5) = &HFF
+    GetAllChannelVoltage(6) = &HFF
+    GetAllChannelVoltage(7) = &HFF
+    GetAllChannelVoltage(8) = &HFF
+    GetAllChannelVoltage(9) = &HFF
+    GetAllChannelVoltage(10) = &HFF
+    Call Cal_CRC16(GetAllChannelVoltage, crc, 12)
+    GetAllChannelVoltage(11) = crc(1)
+    GetAllChannelVoltage(12) = crc(0)
+
+    MSComm2.Output = GetAllChannelVoltage
 End Sub
 
 Private Sub Form_Load()
 
 Dim i As Integer
 
-Label1.Caption = "Link Test Debug Kit"
+Label1.Caption = "Link Test Debug Kit V0.1"
 Label2.Caption = "Port"
 Label3.Caption = "Baud"
 Label4.Caption = "DataBits"
 Label5.Caption = "Parity"
 Label6.Caption = "StopBit"
+
+Label10.Caption = "Port"
+Label11.Caption = "Baud"
+Label12.Caption = "DataBits"
+Label13.Caption = "Parity"
+Label14.Caption = "StopBit"
 
 Combo2.AddItem "115200"
 Combo2.AddItem "921600"
@@ -1681,9 +1755,11 @@ Command2.BackColor = &HFF&
 
 Command3.Caption = "OPEN"
 Command3.BackColor = &HFF&
-Command4.Caption = "SEND"
-Command4.BackColor = &HFF&
+Command4.Caption = "CLEAR"
+Command4.BackColor = &HC000C0
 
+Command2.Enabled = False
+Command6.Enabled = False
 
 For i = 0 To 10
     Relay(i) = 0
@@ -1751,7 +1827,7 @@ Call RecognizeCOM
 Relay(0) = &H55
 Relay(1) = &HB
 Relay(2) = &H1
-Relay(3) = &H0                                           'Type -- RELAY
+Relay(3) = &H0                                               'Type -- RELAY
 Relay(4) = &H0
 Relay(5) = &H0
 Relay(6) = &H0
@@ -1778,21 +1854,6 @@ For i = 0 To 11
     Sensor_Status(i) = 0
 Next i
 
-End Sub
-
-Sub InitRs232() '初始化串口副程序
-   On Error Resume Next
-   If MSComm1.PortOpen Then MSComm1.PortOpen = False '如果串口为打开状态则关闭它
-   With MSComm1 '宣告MsComm的结构体
-      .CommPort = Combo1.Text
-      .Settings = Combo2.Text & "," & Mid(Combo4.Text, 1, 1) & "," & Combo3.Text & "," & Combo5.Text  '这里用"+"和用"&"的作用是一样的，都可以用来连接 '设定通讯协议 9600波特率,无奇偶校验,8位数据,一个停止位
-      .InputLen = 0 '设置Input一次从接收缓冲读取
-      .InBufferSize = 1 '设置缓冲区接收数据为1字节
-      .RThreshold = 1 '设置接收一个字节就产生OnComm事件
-      .InputMode = comInputModeBinary '设定接收模式为文字模式
-      .InBufferCount = 0 '缓冲区清空
-   End With
-   MSComm1.PortOpen = True
 End Sub
 
 Sub RecognizeCOM() '自动识别COM Port
@@ -1827,6 +1888,35 @@ Sub RecognizeCOM() '自动识别COM Port
     Command1.BackColor = &HFF&                      'Red
     End If
     End If
+    
+    
+    j = 0
+    For i = 1 To 32 Step 1
+    If MSComm2.PortOpen = True Then                 '先关闭串口
+    MSComm2.PortOpen = False
+    End If
+    MSComm2.CommPort = i
+    On Error Resume Next                            '说明当一个运行时错误发生时，控件转到紧接着发生错误的语句之后的语句，并在此继续运行。访问对象时要使用这种形式而不使用 On Error GoTo。
+    MSComm2.PortOpen = True
+    If Err.Number <> 8002 Then                      '无效的串口号。这样可以检测到虚拟串口，如果用Err.Number = 0的话检测不到虚拟串口
+    If j = 0 Then
+    j = i
+    End If
+    Combo6.AddItem "COM" & i                         '生成串口选择列表
+    End If
+    MSComm2.PortOpen = False
+    Next i
+    If j >= 1 Then
+    Combo6.Text = "COM" & j                        '自动打开可用的最小串口号
+    MSComm2.CommPort = j
+    If Err.Number = 8005 Then                       '串口已打开,vbExclamation '
+    MSComm2.PortOpen = False
+    Combo6.Text = ""
+    Command3.Caption = "OPEN"
+    Command3.BackColor = &HFF&                      'Red
+    End If
+    End If
+
 End Sub
 
 Public Sub Copy_Dat(pre() As Byte, cur() As Byte, length As Integer) '数据Copy到数组中
@@ -2086,6 +2176,34 @@ MsComm_OnCommErr:
   Err.Clear
 End Sub
 
+Private Sub MSComm2_OnComm()
+
+On Error GoTo MsComm_OnCommErr2
+
+    Dim RecvCount As Integer
+    Dim TempString As String
+    Dim DatIndex As Integer
+    Dim RecvBytes(10) As Byte
+    Dim i As Integer
+    Dim DataProcess_Flag As Boolean
+    Dim data_valid As Boolean
+    Dim data_afterprocess(4) As Byte
+    
+    Select Case MSComm2.CommEvent
+        Case comEvReceive
+            RecvCount = MSComm2.InBufferCount
+            TempString = MSComm2.Input
+            Text1.Text = Text1.Text + TempString
+            Text1.SelStart = Len(Text1.Text)
+    End Select
+  
+MsComm_OnCommErr2:
+  If Err.Number <> 0 Then '错误处理程序
+    MsgBox CStr(Err.Number) + Err.Description, vbOKOnly + vbInformation, "1提示信息!" '为用户提示出错信息
+  End If
+  Err.Clear
+End Sub
+
 Private Sub realy1_Click(Index As Integer)
      
  If (Index = 0) Then
@@ -2101,7 +2219,7 @@ Private Sub realy1_Click(Index As Integer)
  
  Relay(7) = Pre_Relay(7) Or &H1
  Relay(8) = &HAA
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
@@ -2123,7 +2241,7 @@ Private Sub realy1_Click(Index As Integer)
  
  Relay(7) = Pre_Relay(7) And &HFE
  Relay(8) = &HAA
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
@@ -2148,7 +2266,7 @@ Private Sub relay2_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) Or &H2
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2172,7 +2290,7 @@ Private Sub relay2_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) And &HFD
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2197,7 +2315,7 @@ Private Sub relay3_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) Or &H4
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2221,7 +2339,7 @@ Private Sub relay3_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) And &HFB
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2246,7 +2364,7 @@ Private Sub relay4_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) Or &H8
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2270,7 +2388,7 @@ Private Sub relay4_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) And &HF7
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2295,7 +2413,7 @@ Private Sub relay5_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) Or &H10
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2319,7 +2437,7 @@ Private Sub relay5_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) And &HEF
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2344,7 +2462,7 @@ Private Sub relay6_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) Or &H20
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2368,7 +2486,7 @@ Private Sub relay6_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) And &HDF
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2393,7 +2511,7 @@ Private Sub relay7_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) Or &H40
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2417,7 +2535,7 @@ Private Sub relay7_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) And &HBF
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2442,7 +2560,7 @@ Private Sub relay8_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) Or &H80
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2466,7 +2584,7 @@ Private Sub relay8_Click(Index As Integer)
  Relay(7) = Pre_Relay(7) And &H7F
  Relay(8) = &HAA
  
- Call Cal_CRC16(Relay, CRC16)
+ Call Cal_CRC16(Relay, CRC16, 9)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
@@ -2488,10 +2606,10 @@ Private Sub usart1_Click(Index As Integer)
  USB_Board(5) = &H0
  
  USB_Board(6) = Pre_USB_Board(6)
-  USB_Board(7) = (Pre_USB_Board(7) And &HF8) Or &H3
+ USB_Board(7) = (Pre_USB_Board(7) And &HF8) Or &H3
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2515,7 +2633,7 @@ Private Sub usart1_Click(Index As Integer)
  USB_Board(7) = (Pre_USB_Board(7) And &HF8) Or &H1
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2540,7 +2658,7 @@ Private Sub usart1_Click(Index As Integer)
  USB_Board(7) = (Pre_USB_Board(7) And &HF8) Or &H5
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2566,7 +2684,7 @@ If (Index = 0) Then
  USB_Board(7) = (Pre_USB_Board(7) And &HC7) Or &H18
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2590,7 +2708,7 @@ If (Index = 0) Then
  USB_Board(7) = (Pre_USB_Board(7) And &HC7) Or &H8
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2615,7 +2733,7 @@ If (Index = 0) Then
  USB_Board(7) = (Pre_USB_Board(7) And &HC7) Or &H28
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2641,7 +2759,7 @@ If (Index = 0) Then
  USB_Board(7) = (Pre_USB_Board(7) And &H3F) Or &HC0
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2665,7 +2783,7 @@ If (Index = 0) Then
  USB_Board(7) = (Pre_USB_Board(7) And &H3F) Or &H40
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2690,7 +2808,7 @@ If (Index = 0) Then
  USB_Board(7) = (Pre_USB_Board(7) And &H3F) Or &H40
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2716,7 +2834,7 @@ If (Index = 0) Then
  USB_Board(7) = Pre_USB_Board(7)
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2740,7 +2858,7 @@ If (Index = 0) Then
  USB_Board(7) = Pre_USB_Board(7)
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
@@ -2765,7 +2883,7 @@ If (Index = 0) Then
  USB_Board(7) = Pre_USB_Board(7)
  USB_Board(8) = &HAA
  
- Call Cal_CRC16(USB_Board, CRC16)
+ Call Cal_CRC16(USB_Board, CRC16, 9)
  
  USB_Board(9) = CRC16(1)
  USB_Board(10) = CRC16(0)
