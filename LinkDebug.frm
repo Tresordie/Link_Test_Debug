@@ -3,7 +3,7 @@ Object = "{648A5603-2C6E-101B-82B6-000000000014}#1.1#0"; "MSCOMM32.OCX"
 Begin VB.Form Form1 
    BackColor       =   &H80000004&
    BorderStyle     =   1  'Fixed Single
-   Caption         =   "LinkTest(s.y)"
+   Caption         =   "LinkTest(simon.y)"
    ClientHeight    =   8955
    ClientLeft      =   45
    ClientTop       =   375
@@ -1540,27 +1540,37 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
-Dim Relay(10) As Byte
-Dim CRC16(1) As Byte
 
+Dim Pre_Relay(10) As Byte                                   '之前的状态
+Dim Relay(10) As Byte                                       '当前的状态
+Dim ACK_Relay() As Byte                                     'Relay的ACK
+
+Dim USB_Board(10) As Byte
+Dim Pre_USB_Board(10) As Byte
+Dim ACK_USB_Board() As Byte
+
+Dim Sensor_Status() As Byte
+
+Dim CRC16(1) As Byte
 Public Sub Cal_CRC16(dat() As Byte, CRC() As Byte)
 
-    Dim temp As Long
-    Dim i As Integer
-    
-    For i = 0 To 8
-     temp = temp + dat(i)
-    Next i
+Dim temp As Long
+Dim i As Integer
 
-    temp = val("&H" & Hex(temp))
-    CRC(1) = temp / 256
-    CRC(0) = temp Mod 256
+For i = 0 To 8
+ temp = temp + dat(i)
+Next i
+
+temp = Val("&H" & Hex(temp))
+CRC(1) = temp / 256
+CRC(0) = temp Mod 256
+
 End Sub
 
 Private Sub Command1_Click()
 
 If (Command1.Caption = "OPEN") Then                                 '可以打开
- MSComm1.CommPort = val(Mid(Combo1.Text, 4, 1))
+ MSComm1.CommPort = Val(Mid(Combo1.Text, 4, 1))
  With MSComm1
     .Settings = Combo2.Text & "," & Mid(Combo4.Text, 1, 1) & "," & Combo3.Text & "," & Combo5.Text  '这里用"+"和用"&"的作用是一样的，都可以用来连接
     .InputLen = 0
@@ -1583,7 +1593,7 @@ End Sub
 
 Private Sub Command3_Click()
 If (Command3.Caption = "OPEN") Then
-  MSComm2.CommPort = val(Combo6.Text)
+  MSComm2.CommPort = Val(Combo6.Text)
   If MSComm2.PortOpen Then
   MSComm2.PortOpen = False
    MsgBox "COM port had been opened!", vbOKOnly + vbCritical + vbDefaultButton1, "Error"
@@ -1622,8 +1632,6 @@ Label4.Caption = "DataBits"
 Label5.Caption = "Parity"
 Label6.Caption = "StopBit"
 
-Call RecognizeCOM
-
 Combo2.AddItem "115200"
 Combo2.AddItem "921600"
 Combo3.AddItem ("8")
@@ -1642,6 +1650,11 @@ Command3.BackColor = &HFF&
 Command4.Caption = "SEND"
 Command4.BackColor = &HFF&
 
+
+For i = 0 To 10
+    Relay(i) = 0
+    Pre_Relay(i) = 0
+Next i
 
 For i = 0 To 7
  Label7(i).Caption = i + 1
@@ -1698,6 +1711,21 @@ For i = 0 To 11
  Shape9(i).FillStyle = 0
 Next i
 
+Call RecognizeCOM
+
+'Init relay status
+Relay(0) = &H55
+Relay(1) = &HB
+Relay(2) = &H1
+Relay(3) = &H0                                           'Type -- RELAY
+Relay(4) = &H0
+Relay(5) = &H0
+Relay(6) = &H0
+Relay(7) = &H0
+Relay(8) = &HAA
+
+Call Copy_Dat(Pre_Relay, Relay, 9)
+
 End Sub
 
 Sub InitRs232() '初始化串口副程序
@@ -1749,6 +1777,15 @@ Sub RecognizeCOM() '自动识别COM Port
     End If
 End Sub
 
+Public Sub Copy_Dat(pre() As Byte, cur() As Byte, length As Integer) '数据Copy到数组中
+
+    Dim i As Integer
+    i = length
+    For i = 0 To (length - 1)
+      pre(i) = cur(i)
+    Next i
+End Sub
+
 Private Sub MSComm1_OnComm()
 
     Dim indata As String
@@ -1776,21 +1813,390 @@ End Sub
 
 Private Sub realy1_Click(Index As Integer)
      
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
  Relay(0) = &H55
  Relay(1) = &HB
  Relay(2) = &H1
- Relay(3) = &H0
+ Relay(3) = &H0                                      'Type -- RELAY
  Relay(4) = &H0
  Relay(5) = &H0
- Relay(6) = &H1
- Relay(7) = &H1
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H1
+ Relay(8) = &HAA
+ Call Cal_CRC16(Relay, CRC16)
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &HFE
+ Relay(8) = &HAA
+ Call Cal_CRC16(Relay, CRC16)
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+End Sub
+
+Private Sub relay2_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H2
  Relay(8) = &HAA
  
  Call Cal_CRC16(Relay, CRC16)
  
  Relay(9) = CRC16(1)
  Relay(10) = CRC16(0)
-
+ Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
  
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &HFD
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+End Sub
+
+Private Sub relay3_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H4
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &HFB
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+End Sub
+
+Private Sub relay4_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H8
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &HF7
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+End Sub
+
+Private Sub relay5_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H10
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &HEF
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+End Sub
+
+Private Sub relay6_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H20
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &HDF
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+End Sub
+
+Private Sub relay7_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H40
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &HBF
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+End Sub
+
+Private Sub relay8_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) Or &H80
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ Relay(0) = &H55
+ Relay(1) = &HB
+ Relay(2) = &H1
+ Relay(3) = &H0                                      'Type -- RELAY
+ Relay(4) = &H0
+ Relay(5) = &H0
+ Relay(6) = &H0
+ 
+ Relay(7) = Pre_Relay(7) And &H7F
+ Relay(8) = &HAA
+ 
+ Call Cal_CRC16(Relay, CRC16)
+ 
+ Relay(9) = CRC16(1)
+ Relay(10) = CRC16(0)
+ Call Copy_Dat(Pre_Relay, Relay, 9)
+ MSComm1.Output = Relay
+ 
+ End If
 End Sub
