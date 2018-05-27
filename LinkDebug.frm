@@ -157,6 +157,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1560
          TabIndex        =   92
+         Text            =   "1"
          Top             =   2880
          Width           =   1335
       End
@@ -173,6 +174,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1560
          TabIndex        =   90
+         Text            =   "None"
          Top             =   2280
          Width           =   1335
       End
@@ -189,6 +191,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1560
          TabIndex        =   88
+         Text            =   "8"
          Top             =   1680
          Width           =   1335
       End
@@ -205,6 +208,7 @@ Begin VB.Form Form1
          Height          =   405
          Left            =   1560
          TabIndex        =   86
+         Text            =   "115200"
          Top             =   1080
          Width           =   1335
       End
@@ -1549,7 +1553,7 @@ Dim USB_Board(10) As Byte
 Dim Pre_USB_Board(10) As Byte
 Dim ACK_USB_Board() As Byte
 
-Dim Sensor_Status() As Byte
+Dim Sensor_Status(11) As Byte
 
 Dim CRC16(1) As Byte
 Public Sub Cal_CRC16(dat() As Byte, CRC() As Byte)
@@ -1625,7 +1629,7 @@ Private Sub Form_Load()
 
 Dim i As Integer
 
-Label1.Caption = "Link Test Kit Debug"
+Label1.Caption = "Link Test Debug Kit"
 Label2.Caption = "Port"
 Label3.Caption = "Baud"
 Label4.Caption = "DataBits"
@@ -1723,8 +1727,26 @@ Relay(5) = &H0
 Relay(6) = &H0
 Relay(7) = &H0
 Relay(8) = &HAA
-
 Call Copy_Dat(Pre_Relay, Relay, 9)
+
+
+'Init USB_Board status
+USB_Board(0) = &H55
+USB_Board(1) = &HB
+USB_Board(2) = &H1
+USB_Board(3) = &H1                                           'Type -- RELAY
+USB_Board(4) = &H0
+USB_Board(5) = &H0
+USB_Board(6) = &H0
+USB_Board(7) = &H0
+USB_Board(8) = &HAA
+Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+
+
+'Init Sensor board status
+For i = 0 To 11
+    Sensor_Status(i) = 0
+Next i
 
 End Sub
 
@@ -2197,6 +2219,305 @@ Private Sub relay8_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
+ 
+ End If
+End Sub
+
+Private Sub usart1_Click(Index As Integer)
+ If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = Pre_USB_Board(6)
+  USB_Board(7) = (Pre_USB_Board(7) And &HF8) Or &H3
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = Pre_USB_Board(6)
+ USB_Board(7) = (Pre_USB_Board(7) And &HF8) Or &H1
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+ If (Index = 2) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = Pre_USB_Board(6)
+ USB_Board(7) = (Pre_USB_Board(7) And &HF8) Or &H5
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+End Sub
+
+Private Sub usart2_Click(Index As Integer)
+If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = Pre_USB_Board(6)
+ USB_Board(7) = (Pre_USB_Board(7) And &HC7) Or &H18
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = Pre_USB_Board(6)
+ USB_Board(7) = (Pre_USB_Board(7) And &HC7) Or &H8
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+ If (Index = 2) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = Pre_USB_Board(6)
+ USB_Board(7) = (Pre_USB_Board(7) And &HC7) Or &H28
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+End Sub
+
+Private Sub usb1_Click(Index As Integer)
+If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = (Pre_USB_Board(6) And &HFE) Or &H0
+ USB_Board(7) = (Pre_USB_Board(7) And &H3F) Or &HC0
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = (Pre_USB_Board(6) And &HFE) Or &H0
+ USB_Board(7) = (Pre_USB_Board(7) And &H3F) Or &H40
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+ If (Index = 2) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = (Pre_USB_Board(6) And &HFE) Or &H1
+ USB_Board(7) = (Pre_USB_Board(7) And &H3F) Or &H40
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+End Sub
+
+Private Sub usb2_Click(Index As Integer)
+If (Index = 0) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = (Pre_USB_Board(6) And &HF1) Or &H6
+ USB_Board(7) = Pre_USB_Board(7)
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+  If (Index = 1) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = (Pre_USB_Board(6) And &HF1) Or &H2
+ USB_Board(7) = Pre_USB_Board(7)
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
+ 
+ End If
+ 
+ 
+ If (Index = 2) Then
+ 'SOF  LEN  LINK_TEST  RELAY/USB/SENSOR  DAT3  DAT2  DAT1  DAT0  EOF  CRC1  CRC0
+       
+       
+ USB_Board(0) = &H55
+ USB_Board(1) = &HB
+ USB_Board(2) = &H1
+ USB_Board(3) = &H1                                      'Type -- RELAY
+ USB_Board(4) = &H0
+ USB_Board(5) = &H0
+ 
+ USB_Board(6) = (Pre_USB_Board(6) And &HF1) Or &HA
+ USB_Board(7) = Pre_USB_Board(7)
+ USB_Board(8) = &HAA
+ 
+ Call Cal_CRC16(USB_Board, CRC16)
+ 
+ USB_Board(9) = CRC16(1)
+ USB_Board(10) = CRC16(0)
+ Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
+ MSComm1.Output = USB_Board
  
  End If
 End Sub
