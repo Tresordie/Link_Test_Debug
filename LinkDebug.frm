@@ -1,5 +1,6 @@
 VERSION 5.00
 Object = "{648A5603-2C6E-101B-82B6-000000000014}#1.1#0"; "MSCOMM32.OCX"
+Object = "{6FBA474E-43AC-11CE-9A0E-00AA0062BB4C}#1.0#0"; "SYSINFO.OCX"
 Begin VB.Form Form1 
    BackColor       =   &H80000004&
    BorderStyle     =   1  'Fixed Single
@@ -18,12 +19,20 @@ Begin VB.Form Form1
       Italic          =   0   'False
       Strikethrough   =   0   'False
    EndProperty
+   Icon            =   "LinkDebug.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    ScaleHeight     =   8955
    ScaleWidth      =   16530
    StartUpPosition =   3  '´°¿ÚÈ±Ê¡
+   Begin SysInfoLib.SysInfo SysInfo1 
+      Left            =   15720
+      Top             =   240
+      _ExtentX        =   1005
+      _ExtentY        =   1005
+      _Version        =   393216
+   End
    Begin VB.Frame Frame12 
       Caption         =   "Voltage Output"
       ForeColor       =   &H000000FF&
@@ -325,7 +334,7 @@ Begin VB.Form Form1
       End
    End
    Begin MSCommLib.MSComm MSComm2 
-      Left            =   15720
+      Left            =   600
       Top             =   120
       _ExtentX        =   1005
       _ExtentY        =   1005
@@ -561,9 +570,9 @@ Begin VB.Form Form1
       Caption         =   "USB Switch Board"
       ForeColor       =   &H000000FF&
       Height          =   2175
-      Left            =   120
+      Left            =   -2640
       TabIndex        =   40
-      Top             =   5160
+      Top             =   5880
       Width           =   10935
       Begin VB.Frame Frame9 
          Caption         =   "USB2"
@@ -1435,9 +1444,9 @@ Begin VB.Form Form1
             Strikethrough   =   0   'False
          EndProperty
          Height          =   405
-         ItemData        =   "LinkDebug.frx":0000
+         ItemData        =   "LinkDebug.frx":25CA
          Left            =   1200
-         List            =   "LinkDebug.frx":0002
+         List            =   "LinkDebug.frx":25CC
          TabIndex        =   3
          Top             =   480
          Width           =   1095
@@ -1542,10 +1551,10 @@ Begin VB.Form Form1
       EndProperty
       ForeColor       =   &H00FF0000&
       Height          =   615
-      Left            =   840
+      Left            =   1200
       TabIndex        =   0
       Top             =   120
-      Width           =   14655
+      Width           =   14175
    End
 End
 Attribute VB_Name = "Form1"
@@ -1681,7 +1690,7 @@ Private Sub Command5_Click()
         SetVoltageRange(8) = &H0
         SetVoltageRange(9) = &H0
         SetVoltageRange(10) = &H0
-        Call Cal_CRC16(SetVoltageRange, crc, 12)
+        Call Cal_CRC16(SetVoltageRange, crc, 11)
         SetVoltageRange(11) = crc(1)
         SetVoltageRange(12) = crc(0)
     ElseIf (Check1(1).Value = 1) Then
@@ -1696,7 +1705,7 @@ Private Sub Command5_Click()
         SetVoltageRange(8) = &HFF
         SetVoltageRange(9) = &HFF
         SetVoltageRange(10) = &HFF
-        Call Cal_CRC16(SetVoltageRange, crc, 12)
+        Call Cal_CRC16(SetVoltageRange, crc, 11)
         SetVoltageRange(11) = crc(1)
         SetVoltageRange(12) = crc(0)
     End If
@@ -1716,7 +1725,7 @@ Private Sub Command6_Click()
     GetAllChannelVoltage(8) = &HFF
     GetAllChannelVoltage(9) = &HFF
     GetAllChannelVoltage(10) = &HFF
-    Call Cal_CRC16(GetAllChannelVoltage, crc, 12)
+    Call Cal_CRC16(GetAllChannelVoltage, crc, 11)
     GetAllChannelVoltage(11) = crc(1)
     GetAllChannelVoltage(12) = crc(0)
 
@@ -1727,7 +1736,7 @@ Private Sub Form_Load()
 
 Dim i As Integer
 
-Label1.Caption = "Link Test Debug Kit V0.1"
+Label1.Caption = "Link Test Debug Kit V0.2"
 Label2.Caption = "Port"
 Label3.Caption = "Baud"
 Label4.Caption = "DataBits"
@@ -1820,8 +1829,6 @@ For i = 0 To 11
  Shape9(i).BackColor = &H0&
  Shape9(i).FillStyle = 0
 Next i
-
-Call RecognizeCOM
 
 'Init relay status
 Relay(0) = &H55
@@ -1952,7 +1959,7 @@ On Error GoTo MsComm_OnCommErr
                 DatIndex = DatIndex + 1
             Next i
         
-            If DatIndex >= 10 Then
+            If DatIndex >= 11 Then
                 DatIndex = 0
                 DataProcess_Flag = True
             End If
@@ -2014,79 +2021,65 @@ On Error GoTo MsComm_OnCommErr
                 
                     Case &H11                                        ' usb board
                         'uart1
-                        If ((data_afterprocess(4) And &H3) = &H3) Then
+                        If ((data_afterprocess(4) And &H7) = &H3) Then
                             Shape10(0).FillColor = &HFF&        'red
-                        Else
-                            Shape10(0).FillColor = &H80000008   'black
-                        End If
-                    
-                        If ((data_afterprocess(4) And &H1) = &H1) Then
-                            Shape10(1).FillColor = &HFF&        'red
-                        Else
                             Shape10(1).FillColor = &H80000008   'black
-                        End If
-                    
-                        If ((data_afterprocess(4) And &H5) = &H5) Then
-                            Shape10(2).FillColor = &HFF&        'red
-                        Else
                             Shape10(2).FillColor = &H80000008   'black
+                        ElseIf ((data_afterprocess(4) And &H7) = &H1) Then
+                            Shape10(0).FillColor = &H80000008   'black
+                            Shape10(1).FillColor = &HFF&        'red
+                            Shape10(2).FillColor = &H80000008   'black
+                        ElseIf ((data_afterprocess(4) And &H7) = &H5) Then
+                            Shape10(0).FillColor = &H80000008   'black
+                            Shape10(1).FillColor = &H80000008   'red
+                            Shape10(2).FillColor = &HFF&        'black
                         End If
+
                     
                         'uart2
-                        If ((data_afterprocess(4) And &H18) = &H18) Then
+                        If ((data_afterprocess(4) And &H38) = &H18) Then
                             Shape11(0).FillColor = &HFF&        'red
-                        Else
-                            Shape11(0).FillColor = &H80000008   'black
-                        End If
-                    
-                        If ((data_afterprocess(4) And &H8) = &H8) Then
-                            Shape11(1).FillColor = &HFF&        'red
-                        Else
                             Shape11(1).FillColor = &H80000008   'black
+                            Shape11(3).FillColor = &H80000008   'black
+                        ElseIf ((data_afterprocess(4) And &H38) = &H8) Then
+                            Shape11(0).FillColor = &H80000008   'black
+                            Shape11(1).FillColor = &HFF&        'red
+                            Shape11(3).FillColor = &H80000008   'black
+                        ElseIf ((data_afterprocess(4) And &H38) = &H28) Then
+                            Shape11(0).FillColor = &H80000008   'black
+                            Shape11(1).FillColor = &H80000008   'black
+                            Shape11(3).FillColor = &HFF&        'red
                         End If
                     
-                        If ((data_afterprocess(4) And &H28) = &H28) Then
-                            Shape11(3).FillColor = &HFF&        'red
-                        Else
-                            Shape11(3).FillColor = &H80000008   'black
-                        End If
                     
                         'usb1
-                        If ((data_afterprocess(4) And &HC0) = &HC0) Then
-                            Shape12(0).FillColor = &HFF&        'red
-                        Else
-                            Shape12(0).FillColor = &H80000008   'black
-                        End If
-                    
-                        If ((data_afterprocess(4) And &H40) = &H40) Then
-                            Shape12(1).FillColor = &HFF&        'red
-                        Else
-                            Shape12(1).FillColor = &H80000008   'black
-                        End If
-                    
-                        If (((data_afterprocess(4) And &H40) = &H40) And ((data_afterprocess(3) And &H1) = &H1)) Then
-                            Shape12(2).FillColor = &HFF&        'red
-                        Else
-                            Shape12(2).FillColor = &H80000008   'black
+                        If (((data_afterprocess(4) And &HC0) = &HC0) And ((data_afterprocess(3) And &H1) = &H0)) Then
+                            Shape12(0).FillColor = &HFF&             'red
+                            Shape12(1).FillColor = &H80000008        'black
+                            Shape12(2).FillColor = &H80000008        'black
+                        ElseIf (((data_afterprocess(4) And &HC0) = &H40) And ((data_afterprocess(3) And &H1) = &H0)) Then
+                            Shape12(0).FillColor = &H80000008        'black
+                            Shape12(1).FillColor = &HFF&             'red
+                            Shape12(2).FillColor = &H80000008        'black
+                        ElseIf (((data_afterprocess(4) And &HC0) = &H40) And ((data_afterprocess(3) And &H1) = &H1)) Then
+                            Shape12(0).FillColor = &H80000008        'black
+                            Shape12(1).FillColor = &H80000008        'black
+                            Shape12(2).FillColor = &HFF&             'red
                         End If
                     
                         'usb2
-                        If ((data_afterprocess(3) And &H6) = &H6) Then
+                        If ((data_afterprocess(3) And &HE) = &H6) Then
                             Shape13(0).FillColor = &HFF&        'red
-                        Else
-                            Shape13(0).FillColor = &H80000008   'black
-                        End If
-                    
-                        If ((data_afterprocess(3) And &H2) = &H2) Then
-                            Shape13(1).FillColor = &HFF&        'red
-                        Else
                             Shape13(1).FillColor = &H80000008   'black
-                        End If
-                    
-                        If (((data_afterprocess(3) And &HA) = &HA) And ((data_afterprocess(3) And &H1) = &H1)) Then
-                            Shape13(2).FillColor = &HFF&        'red
-                        Else
                             Shape13(2).FillColor = &H80000008   'black
+                        ElseIf ((data_afterprocess(3) And &HE) = &H2) Then
+                            Shape13(0).FillColor = &H80000008   'black
+                            Shape13(1).FillColor = &HFF&        'red
+                            Shape13(2).FillColor = &H80000008   'black
+                        ElseIf ((data_afterprocess(3) And &HE) = &HA) Then
+                            Shape13(0).FillColor = &H80000008   'black
+                            Shape13(1).FillColor = &H80000008   'black
+                            Shape13(2).FillColor = &HFF&        'red
                         End If
                     
                     Case &H12                                        ' sensor board
@@ -2224,7 +2217,7 @@ Private Sub realy1_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
  
@@ -2246,7 +2239,7 @@ Private Sub realy1_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
 End Sub
@@ -2272,7 +2265,7 @@ Private Sub relay2_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
  
@@ -2296,7 +2289,7 @@ Private Sub relay2_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
 End Sub
 
@@ -2321,7 +2314,7 @@ Private Sub relay3_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
  
@@ -2345,7 +2338,7 @@ Private Sub relay3_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
 End Sub
 
@@ -2370,7 +2363,7 @@ Private Sub relay4_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
  
@@ -2394,7 +2387,7 @@ Private Sub relay4_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
 End Sub
 
@@ -2419,7 +2412,7 @@ Private Sub relay5_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
  
@@ -2443,7 +2436,7 @@ Private Sub relay5_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
 End Sub
 
@@ -2468,6 +2461,7 @@ Private Sub relay6_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
+ Call Sleep(50)
  
  End If
  
@@ -2492,7 +2486,7 @@ Private Sub relay6_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
 End Sub
 
@@ -2517,7 +2511,7 @@ Private Sub relay7_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
  
@@ -2541,7 +2535,7 @@ Private Sub relay7_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
 End Sub
 
@@ -2566,7 +2560,7 @@ Private Sub relay8_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
  
  
@@ -2590,8 +2584,16 @@ Private Sub relay8_Click(Index As Integer)
  Relay(10) = CRC16(0)
  Call Copy_Dat(Pre_Relay, Relay, 9)
  MSComm1.Output = Relay
- 
+ Call Sleep(50)
  End If
+End Sub
+
+Private Sub SysInfo1_DeviceArrival(ByVal DeviceType As Long, ByVal DeviceID As Long, ByVal DeviceName As String, ByVal DeviceData As Long)
+    Call RecognizeCOM
+End Sub
+
+Private Sub SysInfo1_DeviceRemoveComplete(ByVal DeviceType As Long, ByVal DeviceID As Long, ByVal DeviceName As String, ByVal DeviceData As Long)
+    Call RecognizeCOM
 End Sub
 
 Private Sub usart1_Click(Index As Integer)
