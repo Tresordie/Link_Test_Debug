@@ -570,9 +570,9 @@ Begin VB.Form Form1
       Caption         =   "USB Switch Board"
       ForeColor       =   &H000000FF&
       Height          =   2175
-      Left            =   -2640
+      Left            =   120
       TabIndex        =   40
-      Top             =   5880
+      Top             =   5160
       Width           =   10935
       Begin VB.Frame Frame9 
          Caption         =   "USB2"
@@ -581,12 +581,12 @@ Begin VB.Form Form1
          Left            =   8280
          TabIndex        =   57
          Top             =   360
-         Width           =   2415
+         Width           =   2535
          Begin VB.CommandButton usb2 
             Caption         =   "DISC"
             Height          =   375
             Index           =   2
-            Left            =   1560
+            Left            =   1680
             TabIndex        =   81
             Top             =   1200
             Width           =   735
@@ -595,7 +595,7 @@ Begin VB.Form Form1
             Caption         =   "OFF"
             Height          =   375
             Index           =   1
-            Left            =   840
+            Left            =   960
             TabIndex        =   65
             Top             =   1200
             Width           =   615
@@ -607,7 +607,7 @@ Begin VB.Form Form1
             Left            =   120
             TabIndex        =   64
             Top             =   1200
-            Width           =   615
+            Width           =   735
          End
          Begin VB.Label Label9 
             Caption         =   "DISC"
@@ -1056,6 +1056,13 @@ Begin VB.Form Form1
       TabIndex        =   15
       Top             =   960
       Width           =   8175
+      Begin VB.Shape Shape8 
+         Height          =   615
+         Left            =   7200
+         Shape           =   5  'Rounded Square
+         Top             =   1080
+         Width           =   615
+      End
       Begin VB.Label Label7 
          Caption         =   "Label7"
          Height          =   375
@@ -1127,13 +1134,6 @@ Begin VB.Form Form1
          TabIndex        =   16
          Top             =   600
          Width           =   495
-      End
-      Begin VB.Shape Shape8 
-         Height          =   615
-         Left            =   7200
-         Shape           =   5  'Rounded Square
-         Top             =   1080
-         Width           =   615
       End
       Begin VB.Shape Shape7 
          Height          =   615
@@ -1581,7 +1581,7 @@ Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 
 Public Sub Cal_CRC16(dat() As Byte, crc() As Byte, length As Integer)
 
-Dim temp As Long
+Dim temp As Variant
 Dim i As Integer
 
 For i = 0 To length - 1
@@ -1604,7 +1604,7 @@ Dim crc(1) As Byte
 
 Call Copy_Dat(temp, src_pack, 9)
 
-If ((src_pack(0) <> &H55) Or (src_pack(1) <> &HB) Or (src_pack(2) <> &H1)) Then
+If ((src_pack(0) <> &H55) Or (src_pack(1) <> &HB) Or (src_pack(2) <> &H1) Or (src_pack(8) <> &HAA)) Then
  valid_data = False
 End If
 
@@ -1618,6 +1618,32 @@ If ((src_pack(0) = &H55) And (src_pack(1) = &HB) And (src_pack(2) = &H1) And (sr
  End If
 End If
 
+End Sub
+
+Public Sub Check_Combo1_Repeat()
+    Dim i, k As Integer
+    Dim can As String
+    Dim san As String
+    For i = 0 To Combo1.ListCount - 1
+        For k = i + 1 To Combo1.ListCount - 1
+            can = Combo1.List(i)
+            san = Combo1.List(k)
+        If can = san Then Combo1.RemoveItem (k)
+    Next k
+    Next i
+End Sub
+
+Public Sub Check_Combo6_Repeat()
+    Dim i, k As Integer
+    Dim can As String
+    Dim san As String
+    For i = 0 To Combo6.ListCount - 1
+        For k = i + 1 To Combo6.ListCount - 1
+            can = Combo6.List(i)
+            san = Combo6.List(k)
+        If can = san Then Combo6.RemoveItem (k)
+    Next k
+    Next i
 End Sub
 
 Private Sub Command1_Click()
@@ -1854,7 +1880,7 @@ USB_Board(6) = &H0
 USB_Board(7) = &H0
 USB_Board(8) = &HAA
 Call Copy_Dat(Pre_USB_Board, USB_Board, 9)
-
+Call RecognizeCOM
 
 'Init Sensor board status
 For i = 0 To 11
@@ -1865,8 +1891,11 @@ End Sub
 
 Sub RecognizeCOM() '自动识别COM Port
     Dim i As Integer
+    Dim item_index As Integer
     Dim j As Integer
+    
     j = 0
+
     For i = 1 To 32 Step 1
     If MSComm1.PortOpen = True Then                 '先关闭串口
     MSComm1.PortOpen = False
@@ -1878,16 +1907,14 @@ Sub RecognizeCOM() '自动识别COM Port
     If j = 0 Then
     j = i
     End If
-    Combo1.AddItem "COM" & i                         '生成串口选择列表
+
+    Combo1.AddItem "COM" & i                        '生成串口选择列表
     End If
     MSComm1.PortOpen = False
     Next i
     If j >= 1 Then
-    Combo1.Text = "COM" & j                        '自动打开可用的最小串口号
+    Combo1.Text = "COM" & j                         '自动打开可用的最小串口号
     MSComm1.CommPort = j
-    'MSComm1.PortOpen = True
-    'Command1.Caption = "CLOSE"
-    'Command1.BackColor = &HFF00&                   'Green
     If Err.Number = 8005 Then                       '串口已打开,vbExclamation '
     MSComm1.PortOpen = False
     Combo1.Text = ""
@@ -1895,7 +1922,7 @@ Sub RecognizeCOM() '自动识别COM Port
     Command1.BackColor = &HFF&                      'Red
     End If
     End If
-    
+    Call Check_Combo1_Repeat
     
     j = 0
     For i = 1 To 32 Step 1
@@ -1923,7 +1950,8 @@ Sub RecognizeCOM() '自动识别COM Port
     Command3.BackColor = &HFF&                      'Red
     End If
     End If
-
+    Call Check_Combo6_Repeat
+    
 End Sub
 
 Public Sub Copy_Dat(pre() As Byte, cur() As Byte, length As Integer) '数据Copy到数组中
@@ -2012,12 +2040,12 @@ On Error GoTo MsComm_OnCommErr
                             Shape7.FillColor = &H80000008   'black
                         End If
                 
-                        If (data_afterprocess(4) And &H80) Then
+                        If ((data_afterprocess(4) And &H80) = &H80) Then
                             Shape8.FillColor = &HFF&        'red
                         Else
                             Shape8.FillColor = &H80000008   'black
                         End If
-                
+
                 
                     Case &H11                                        ' usb board
                         'uart1
@@ -2173,18 +2201,12 @@ Private Sub MSComm2_OnComm()
 
 On Error GoTo MsComm_OnCommErr2
 
-    Dim RecvCount As Integer
+    Dim Recv2Count As Integer
     Dim TempString As String
-    Dim DatIndex As Integer
-    Dim RecvBytes(10) As Byte
-    Dim i As Integer
-    Dim DataProcess_Flag As Boolean
-    Dim data_valid As Boolean
-    Dim data_afterprocess(4) As Byte
     
     Select Case MSComm2.CommEvent
         Case comEvReceive
-            RecvCount = MSComm2.InBufferCount
+            Recv2Count = MSComm2.InBufferCount
             TempString = MSComm2.Input
             Text1.Text = Text1.Text + TempString
             Text1.SelStart = Len(Text1.Text)
