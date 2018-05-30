@@ -1057,6 +1057,8 @@ Begin VB.Form Form1
       Top             =   960
       Width           =   8175
       Begin VB.Shape Shape8 
+         BorderColor     =   &H80000006&
+         FillStyle       =   0  'Solid
          Height          =   615
          Left            =   7200
          Shape           =   5  'Rounded Square
@@ -1581,7 +1583,7 @@ Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 
 Public Sub Cal_CRC16(dat() As Byte, crc() As Byte, length As Integer)
 
-Dim temp As Variant
+Dim temp As Long
 Dim i As Integer
 
 For i = 0 To length - 1
@@ -1589,7 +1591,7 @@ For i = 0 To length - 1
 Next i
 
 temp = Val("&H" & Hex(temp))
-crc(1) = temp / 256
+crc(1) = (temp And &HFF00) / 256                             '环境会进行四舍五入
 crc(0) = temp Mod 256
 
 End Sub
@@ -1762,7 +1764,7 @@ Private Sub Form_Load()
 
 Dim i As Integer
 
-Label1.Caption = "Link Test Debug Kit V0.2"
+Label1.Caption = "Link Test Debug Kit V1.0"
 Label2.Caption = "Port"
 Label3.Caption = "Baud"
 Label4.Caption = "DataBits"
@@ -1982,7 +1984,7 @@ On Error GoTo MsComm_OnCommErr
             ReDim TempBytes(RecvCount - 1)
             TempBytes = MSComm1.Input
          
-            For i = 0 To RecvCount - 1
+            For i = 0 To (RecvCount - 1)
                 RecvBytes(DatIndex) = TempBytes(i)
                 DatIndex = DatIndex + 1
             Next i
@@ -2040,7 +2042,7 @@ On Error GoTo MsComm_OnCommErr
                             Shape7.FillColor = &H80000008   'black
                         End If
                 
-                        If ((data_afterprocess(4) And &H80) = &H80) Then
+                        If (data_afterprocess(4) And &H80) Then
                             Shape8.FillColor = &HFF&        'red
                         Else
                             Shape8.FillColor = &H80000008   'black
@@ -2048,68 +2050,86 @@ On Error GoTo MsComm_OnCommErr
 
                 
                     Case &H11                                        ' usb board
-                        'uart1
-                        If ((data_afterprocess(4) And &H7) = &H3) Then
-                            Shape10(0).FillColor = &HFF&        'red
-                            Shape10(1).FillColor = &H80000008   'black
-                            Shape10(2).FillColor = &H80000008   'black
-                        ElseIf ((data_afterprocess(4) And &H7) = &H1) Then
-                            Shape10(0).FillColor = &H80000008   'black
-                            Shape10(1).FillColor = &HFF&        'red
-                            Shape10(2).FillColor = &H80000008   'black
-                        ElseIf ((data_afterprocess(4) And &H7) = &H5) Then
-                            Shape10(0).FillColor = &H80000008   'black
-                            Shape10(1).FillColor = &H80000008   'red
-                            Shape10(2).FillColor = &HFF&        'black
+                        If ((data_afterprocess(4) <> 0) Or (data_afterprocess(3) <> 0)) Then
+                            'uart1
+                            If ((data_afterprocess(4) And &H7) = &H3) Then
+                                Shape10(0).FillColor = &HFF&        'red
+                                Shape10(1).FillColor = &H80000008   'black
+                                Shape10(2).FillColor = &H80000008   'black
+                            ElseIf ((data_afterprocess(4) And &H7) = &H1) Then
+                                Shape10(0).FillColor = &H80000008   'black
+                                Shape10(1).FillColor = &HFF&        'red
+                                Shape10(2).FillColor = &H80000008   'black
+                            ElseIf ((data_afterprocess(4) And &H7) = &H5) Then
+                                Shape10(0).FillColor = &H80000008   'black
+                                Shape10(1).FillColor = &H80000008   'red
+                                Shape10(2).FillColor = &HFF&        'black
+                            'ElseIf (((data_afterprocess(4) And &H7) <> &H3) And ((data_afterprocess(4) And &H7) <> &H1) And ((data_afterprocess(4) And &H7) <> &H5)) Then
+                             Else
+                                Shape10(0).FillColor = &H80000008   'black
+                                Shape10(1).FillColor = &H80000008   'black
+                                Shape10(2).FillColor = &H80000008   'black
+                            End If
+                        
+                            'uart2
+                            If ((data_afterprocess(4) And &H38) = &H18) Then
+                                Shape11(0).FillColor = &HFF&        'red
+                                Shape11(1).FillColor = &H80000008   'black
+                                Shape11(3).FillColor = &H80000008   'black
+                            ElseIf ((data_afterprocess(4) And &H38) = &H8) Then
+                                Shape11(0).FillColor = &H80000008   'black
+                                Shape11(1).FillColor = &HFF&        'red
+                                Shape11(3).FillColor = &H80000008   'black
+                            ElseIf ((data_afterprocess(4) And &H38) = &H28) Then
+                                Shape11(0).FillColor = &H80000008   'black
+                                Shape11(1).FillColor = &H80000008   'black
+                                Shape11(3).FillColor = &HFF&        'red
+                            'ElseIf (((data_afterprocess(4) And &H38) <> &H18) And ((data_afterprocess(4) And &H38) <> &H8) And ((data_afterprocess(4) And &H38) <> &H28)) Then
+                            Else
+                                Shape11(0).FillColor = &H80000008   'black
+                                Shape11(1).FillColor = &H80000008   'black
+                                Shape11(3).FillColor = &H80000008   'black
+                            End If
+                        
+                            'usb1
+                            If (((data_afterprocess(4) And &HC0) = &HC0) And ((data_afterprocess(3) And &H1) = &H0)) Then
+                                Shape12(0).FillColor = &HFF&             'red
+                                Shape12(1).FillColor = &H80000008        'black
+                                Shape12(2).FillColor = &H80000008        'black
+                            ElseIf (((data_afterprocess(4) And &HC0) = &H40) And ((data_afterprocess(3) And &H1) = &H0)) Then
+                                Shape12(0).FillColor = &H80000008        'black
+                                Shape12(1).FillColor = &HFF&             'red
+                                Shape12(2).FillColor = &H80000008        'black
+                            ElseIf (((data_afterprocess(4) And &HC0) = &H40) And ((data_afterprocess(3) And &H1) = &H1)) Then
+                                Shape12(0).FillColor = &H80000008        'black
+                                Shape12(1).FillColor = &H80000008        'black
+                                Shape12(2).FillColor = &HFF&             'red
+                            Else
+                                Shape12(0).FillColor = &H80000008        'black
+                                Shape12(1).FillColor = &H80000008        'black
+                                Shape12(2).FillColor = &H80000008        'black
+                            End If
+                        
+                            'usb2
+                            If ((data_afterprocess(3) And &HE) = &H6) Then
+                                Shape13(0).FillColor = &HFF&        'red
+                                Shape13(1).FillColor = &H80000008   'black
+                                Shape13(2).FillColor = &H80000008   'black
+                            ElseIf ((data_afterprocess(3) And &HE) = &H2) Then
+                                Shape13(0).FillColor = &H80000008   'black
+                                Shape13(1).FillColor = &HFF&        'red
+                                Shape13(2).FillColor = &H80000008   'black
+                            ElseIf ((data_afterprocess(3) And &HE) = &HA) Then
+                                Shape13(0).FillColor = &H80000008   'black
+                                Shape13(1).FillColor = &H80000008   'black
+                                Shape13(2).FillColor = &HFF&        'red
+                            Else
+                                Shape13(0).FillColor = &H80000008   'black
+                                Shape13(1).FillColor = &H80000008   'black
+                                Shape13(2).FillColor = &H80000008   'black
+                            End If
                         End If
-
-                    
-                        'uart2
-                        If ((data_afterprocess(4) And &H38) = &H18) Then
-                            Shape11(0).FillColor = &HFF&        'red
-                            Shape11(1).FillColor = &H80000008   'black
-                            Shape11(3).FillColor = &H80000008   'black
-                        ElseIf ((data_afterprocess(4) And &H38) = &H8) Then
-                            Shape11(0).FillColor = &H80000008   'black
-                            Shape11(1).FillColor = &HFF&        'red
-                            Shape11(3).FillColor = &H80000008   'black
-                        ElseIf ((data_afterprocess(4) And &H38) = &H28) Then
-                            Shape11(0).FillColor = &H80000008   'black
-                            Shape11(1).FillColor = &H80000008   'black
-                            Shape11(3).FillColor = &HFF&        'red
-                        End If
-                    
-                    
-                        'usb1
-                        If (((data_afterprocess(4) And &HC0) = &HC0) And ((data_afterprocess(3) And &H1) = &H0)) Then
-                            Shape12(0).FillColor = &HFF&             'red
-                            Shape12(1).FillColor = &H80000008        'black
-                            Shape12(2).FillColor = &H80000008        'black
-                        ElseIf (((data_afterprocess(4) And &HC0) = &H40) And ((data_afterprocess(3) And &H1) = &H0)) Then
-                            Shape12(0).FillColor = &H80000008        'black
-                            Shape12(1).FillColor = &HFF&             'red
-                            Shape12(2).FillColor = &H80000008        'black
-                        ElseIf (((data_afterprocess(4) And &HC0) = &H40) And ((data_afterprocess(3) And &H1) = &H1)) Then
-                            Shape12(0).FillColor = &H80000008        'black
-                            Shape12(1).FillColor = &H80000008        'black
-                            Shape12(2).FillColor = &HFF&             'red
-                        End If
-                    
-                        'usb2
-                        If ((data_afterprocess(3) And &HE) = &H6) Then
-                            Shape13(0).FillColor = &HFF&        'red
-                            Shape13(1).FillColor = &H80000008   'black
-                            Shape13(2).FillColor = &H80000008   'black
-                        ElseIf ((data_afterprocess(3) And &HE) = &H2) Then
-                            Shape13(0).FillColor = &H80000008   'black
-                            Shape13(1).FillColor = &HFF&        'red
-                            Shape13(2).FillColor = &H80000008   'black
-                        ElseIf ((data_afterprocess(3) And &HE) = &HA) Then
-                            Shape13(0).FillColor = &H80000008   'black
-                            Shape13(1).FillColor = &H80000008   'black
-                            Shape13(2).FillColor = &HFF&        'red
-                        End If
-                    
+                   
                     Case &H12                                        ' sensor board
                         
                         'Sensor - Channel1~12
