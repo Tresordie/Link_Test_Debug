@@ -38,7 +38,7 @@ File1=@SYSINCHS.DLL,$(WinSysPath),,$(Shared),7/7/98 12:00:00 AM,9728,6.0.81.63
 File2=@SYSINFO.OCX,$(WinSysPath),$(DLLSelfRegister),$(Shared),6/24/98 12:00:00 AM,67376,6.0.81.69
 File3=@MSCOMCHS.DLL,$(WinSysPath),,$(Shared),7/7/98 12:00:00 AM,12800,6.0.81.63
 File4=@MSCOMM32.OCX,$(WinSysPath),$(DLLSelfRegister),$(Shared),5/22/18 1:45:00 AM,103744,6.0.81.69
-File5=@LinkDebug.exe,$(AppPath),,,5/31/18 12:53:10 AM,102400,1.0.0.0
+File5=@LinkDebug.exe,$(AppPath),,,6/1/18 1:38:01 AM,102400,1.0.0.0
 
 ; 要在满的安装盘上定制该文件，需要额外的空间，下列行可能被删除。
 ; 
