@@ -1,5 +1,5 @@
 [Root]
-Most Recent Package=LinkDebugV1_0
+Most Recent Package=LinkDebugV1_1
 
 
 [Package|标准安装软件包 1|Root]
@@ -187,6 +187,101 @@ PrivateGroup0=True
 Parent0=$(Programs)
 
 [Package|LinkDebugV1_0|LinkDebug]
+Icon1=LinkDebug.exe
+Title1=LinkDebug
+StartIn1=$(AppPath)
+Key1=Icon1
+
+[Package|LinkDebugV1_1|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\Software\GitHub_Project\Link_Test_Debug\pack
+
+[Package|LinkDebugV1_1|Configure DAO ISAMs]
+Applicable=No
+
+[Package|LinkDebugV1_1|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|LinkDebugV1_1|Files Found]
+
+[Package|LinkDebugV1_1|Files Released]
+
+[Package|LinkDebugV1_1|Missing Dependency Information]
+
+[Package|LinkDebugV1_1|Out-of-Date Dependency Information]
+
+[Package|LinkDebugV1_1|Files Added]
+
+[Package|LinkDebugV1_1|Files Removed]
+
+[Package|LinkDebugV1_1|Files In Project]
+D:\Software\GitHub_Project\Link_Test_Debug\LinkDebug.exe=Yes
+C:\Windows\System32\msvbvm60.dll=Yes
+C:\Windows\System32\oleaut32.dll=Yes
+C:\Windows\System32\olepro32.dll=Yes
+C:\Windows\System32\asycfilt.dll=Yes
+C:\Windows\System32\stdole2.tlb=Yes
+D:\Software\VisualBasic\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\Windows\System32\VB6CHS.DLL=Yes
+C:\Windows\SysWOW64\MSCOMM32.OCX=Yes
+C:\Windows\SysWOW64\MSCOMCHS.DLL=Yes
+D:\Software\VisualBasic\Wizards\PDWizard\SETUP.EXE=Yes
+D:\Software\VisualBasic\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\Windows\System32\VB6STKIT.DLL=Yes
+D:\Software\VisualBasic\Wizards\PDWizard\ST6UNST.EXE=Yes
+C:\Windows\SysWOW64\SYSINFO.OCX=Yes
+C:\Windows\SysWOW64\SYSINCHS.DLL=Yes
+
+[Package|LinkDebugV1_1|Configure Registry Files]
+Applicable=No
+
+[Package|LinkDebugV1_1|Configure Remote Servers]
+Applicable=No
+
+[Package|LinkDebugV1_1|Install Locations]
+D:\Software\GitHub_Project\Link_Test_Debug\LinkDebug.exe=$(AppPath)
+C:\Windows\System32\msvbvm60.dll=$(WinSysPathSysFile)
+C:\Windows\System32\oleaut32.dll=$(WinSysPathSysFile)
+C:\Windows\System32\olepro32.dll=$(WinSysPathSysFile)
+C:\Windows\System32\asycfilt.dll=$(WinSysPathSysFile)
+C:\Windows\System32\stdole2.tlb=$(WinSysPathSysFile)
+D:\Software\VisualBasic\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\Windows\System32\VB6CHS.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\MSCOMM32.OCX=$(WinSysPath)
+C:\Windows\SysWOW64\MSCOMCHS.DLL=$(WinSysPath)
+D:\Software\VisualBasic\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+D:\Software\VisualBasic\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\Windows\System32\VB6STKIT.DLL=$(WinSysPathSysFile)
+D:\Software\VisualBasic\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+C:\Windows\SysWOW64\SYSINFO.OCX=$(WinSysPath)
+C:\Windows\SysWOW64\SYSINCHS.DLL=$(WinSysPath)
+
+[Package|LinkDebugV1_1|Configure Shared Files]
+Applicable=Yes
+D:\Software\GitHub_Project\Link_Test_Debug\LinkDebug.exe=No
+
+[Package|LinkDebugV1_1|Distribution]
+Type=single
+Size=
+Title=LinkDebug
+
+[Package|LinkDebugV1_1|Package]
+PackageFolder=D:\Software\GitHub_Project\Link_Test_Debug\pack
+ProjectFolder=D:\Software\GitHub_Project\Link_Test_Debug
+ServerSideCab=
+File1=D:\Software\GitHub_Project\Link_Test_Debug\pack\setup.exe
+File2=D:\Software\GitHub_Project\Link_Test_Debug\pack\Setup.Lst
+File3=D:\Software\GitHub_Project\Link_Test_Debug\pack\LinkDebug.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+[Package|LinkDebugV1_1|IconGroups]
+Group0=LinkDebug
+PrivateGroup0=True
+Parent0=$(Programs)
+
+[Package|LinkDebugV1_1|LinkDebug]
 Icon1=LinkDebug.exe
 Title1=LinkDebug
 StartIn1=$(AppPath)

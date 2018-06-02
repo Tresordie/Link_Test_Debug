@@ -26,6 +26,14 @@ Begin VB.Form Form1
    ScaleHeight     =   8955
    ScaleWidth      =   16530
    StartUpPosition =   3  '窗口缺省
+   Begin MSCommLib.MSComm MSComm3 
+      Left            =   1320
+      Top             =   120
+      _ExtentX        =   1005
+      _ExtentY        =   1005
+      _Version        =   393216
+      DTREnable       =   -1  'True
+   End
    Begin SysInfoLib.SysInfo SysInfo1 
       Left            =   15720
       Top             =   240
@@ -242,7 +250,9 @@ Begin VB.Form Form1
             Strikethrough   =   0   'False
          EndProperty
          Height          =   405
+         ItemData        =   "LinkDebug.frx":25CA
          Left            =   1560
+         List            =   "LinkDebug.frx":25CC
          TabIndex        =   84
          Top             =   480
          Width           =   1335
@@ -1446,9 +1456,9 @@ Begin VB.Form Form1
             Strikethrough   =   0   'False
          EndProperty
          Height          =   405
-         ItemData        =   "LinkDebug.frx":25CA
+         ItemData        =   "LinkDebug.frx":25CE
          Left            =   1200
-         List            =   "LinkDebug.frx":25CC
+         List            =   "LinkDebug.frx":25D0
          TabIndex        =   3
          Top             =   480
          Width           =   1095
@@ -1764,7 +1774,7 @@ Private Sub Form_Load()
 
 Dim i As Integer
 
-Label1.Caption = "Link Test Debug Kit V1.0"
+Label1.Caption = "Link Test Debug Kit V1.1"
 Label2.Caption = "Port"
 Label3.Caption = "Baud"
 Label4.Caption = "DataBits"
@@ -1899,25 +1909,25 @@ Sub RecognizeCOM() '自动识别COM Port
     j = 0
 
     For i = 1 To 32 Step 1
-    If MSComm1.PortOpen = True Then                 '先关闭串口
-    MSComm1.PortOpen = False
-    End If
-    MSComm1.CommPort = i
-    On Error Resume Next                            '说明当一个运行时错误发生时，控件转到紧接着发生错误的语句之后的语句，并在此继续运行。访问对象时要使用这种形式而不使用 On Error GoTo。
-    MSComm1.PortOpen = True
-    If Err.Number <> 8002 Then                      '无效的串口号。这样可以检测到虚拟串口，如果用Err.Number = 0的话检测不到虚拟串口
-    If j = 0 Then
-    j = i
-    End If
-
-    Combo1.AddItem "COM" & i                        '生成串口选择列表
-    End If
-    MSComm1.PortOpen = False
+        If MSComm1.PortOpen = True Then                 '先关闭串口
+        MSComm1.PortOpen = False
+        End If
+        MSComm1.CommPort = i
+        On Error Resume Next                            '说明当一个运行时错误发生时，控件转到紧接着发生错误的语句之后的语句，并在此继续运行。访问对象时要使用这种形式而不使用 On Error GoTo。
+        MSComm1.PortOpen = True
+        If Err.Number <> 8002 Then                      '无效的串口号。这样可以检测到虚拟串口，如果用Err.Number = 0的话检测不到虚拟串口
+        If j = 0 Then
+        j = i
+        End If
+    
+        Combo1.AddItem "COM" & i                        '生成串口选择列表
+        End If
+        MSComm1.PortOpen = False
     Next i
     If j >= 1 Then
     Combo1.Text = "COM" & j                         '自动打开可用的最小串口号
     MSComm1.CommPort = j
-    If Err.Number = 8005 Then                       '串口已打开,vbExclamation '
+    If Err.Number = 8005 Then                        '串口已打开,vbExclamation '
     MSComm1.PortOpen = False
     Combo1.Text = ""
     Command1.Caption = "OPEN"
@@ -2631,11 +2641,23 @@ Private Sub relay8_Click(Index As Integer)
 End Sub
 
 Private Sub SysInfo1_DeviceArrival(ByVal DeviceType As Long, ByVal DeviceID As Long, ByVal DeviceName As String, ByVal DeviceData As Long)
-    Call RecognizeCOM
+    If DeviceType = 3 Then
+        Combo1.AddItem DeviceName
+        Combo6.AddItem DeviceName
+    End If
 End Sub
-
 Private Sub SysInfo1_DeviceRemoveComplete(ByVal DeviceType As Long, ByVal DeviceID As Long, ByVal DeviceName As String, ByVal DeviceData As Long)
-    Call RecognizeCOM
+    Dim i As Integer
+    If DeviceType = 3 Then
+        For i = 0 To 31
+        If Combo1.List(i) = DeviceName Then
+            Combo1.RemoveItem (i)
+        End If
+        If Combo6.List(i) = DeviceName Then
+            Combo6.RemoveItem (i)
+        End If
+        Next i
+    End If
 End Sub
 
 Private Sub usart1_Click(Index As Integer)
