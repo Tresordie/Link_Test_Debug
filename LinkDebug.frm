@@ -1068,7 +1068,6 @@ Begin VB.Form Form1
       Width           =   8175
       Begin VB.Shape Shape8 
          BorderColor     =   &H80000006&
-         FillColor       =   &H80000004&
          FillStyle       =   0  'Solid
          Height          =   615
          Left            =   7200

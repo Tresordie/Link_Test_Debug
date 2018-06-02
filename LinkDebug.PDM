@@ -192,7 +192,6 @@ Title1=LinkDebug
 StartIn1=$(AppPath)
 Key1=Icon1
 
-
 [Package|LinkDebugV1_1|Root]
 SubWizProgID=PDWizard.SetupPkgSubWiz
 BuildFolder=D:\Software\GitHub_Project\Link_Test_Debug\pack
@@ -265,7 +264,7 @@ D:\Software\GitHub_Project\Link_Test_Debug\LinkDebug.exe=No
 [Package|LinkDebugV1_1|Distribution]
 Type=single
 Size=
-Title=LinkDebug_v1.1
+Title=LinkDebug
 
 [Package|LinkDebugV1_1|Package]
 PackageFolder=D:\Software\GitHub_Project\Link_Test_Debug\pack
